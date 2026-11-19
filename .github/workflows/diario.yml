@@ -1,0 +1,50 @@
+name: ETF2 · actualización diaria
+
+on:
+  schedule:
+    # 23:00 UTC = 18:00 hora de Perú, de lunes a viernes (después del cierre de Wall Street)
+    - cron: "0 23 * * 1-5"
+    # Sábados 12:30 UTC: recarga completa, para recoger los ajustes de Yahoo por dividendos
+    - cron: "30 12 * * 6"
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "historico = carga completa (primera vez) · diario = solo lo nuevo"
+        type: choice
+        options: [diario, historico]
+        default: diario
+      origen:
+        description: "Quién lanza la corrida (el botón del panel envía «panel»)"
+        type: string
+        default: github
+
+# Evita que dos ejecuciones corran a la vez y se pisen
+concurrency:
+  group: etf2-pipeline
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Ejecutar pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          # Opcional: sin esta clave las recomendaciones se redactan con la plantilla fija.
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MODO: ${{ inputs.modo || (github.event.schedule == '30 12 * * 6' && 'historico') || 'diario' }}
+          # Vacío en las corridas programadas; «panel» cuando la lanza el botón «Actualizar ahora»
+          ORIGEN_CORRIDA: ${{ inputs.origen }}
+        run: python run_pipeline.py --modo "$MODO"

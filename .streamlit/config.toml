@@ -1,0 +1,16 @@
+# Apariencia del panel. Los colores coinciden con etf2/tema.py.
+[theme]
+base = "dark"
+primaryColor = "#d4b06a"
+backgroundColor = "#0a0e16"
+secondaryBackgroundColor = "#111723"
+textColor = "#e7ebf3"
+borderColor = "#232d42"
+baseRadius = "0.6rem"
+font = "Inter, system-ui, 'Segoe UI', Roboto, sans-serif"
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false
